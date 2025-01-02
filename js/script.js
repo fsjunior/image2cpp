@@ -3,16 +3,16 @@
 /* eslint-disable no-plusplus */
 // A bunch of settings used when converting
 const settings = {
-  screenWidth: 128,
-  screenHeight: 64,
+  screenWidth: 960,
+  screenHeight: 540,
   scaleToFit: true,
   preserveRatio: true,
-  centerHorizontally: false,
-  centerVertically: false,
+  centerHorizontally: true,
+  centerVertically: true,
   flipHorizontally: false,
   flipVertically: false,
   backgroundColor: 'white',
-  scale: 1,
+  scale: 2,
   drawMode: 'horizontal',
   removeZeroesCommas: false,
   ditheringThreshold: 128,
@@ -83,40 +83,55 @@ const ConversionFunctions = {
     return stringFromBytes;
   },
 
-  // Output the image as a string for vertically drawing displays
-  // eslint-disable-next-line no-unused-vars
-  vertical1bit(data, canvasWidth) {
+  horizontal4bit(data, canvasWidth) {
     let stringFromBytes = '';
     let outputIndex = 0;
-    for (let p = 0; p < Math.ceil(settings.screenHeight / 8); p++) {
-      for (let x = 0; x < settings.screenWidth; x++) {
-        let byteIndex = 7;
-        let number = 0;
+    //let byteIndex = 7;
+    let upperByte = true;
+    let number = 0;
 
-        for (let y = 7; y >= 0; y--) {
-          const index = ((p * 8) + y) * (settings.screenWidth * 4) + x * 4;
-          const avg = (data[index] + data[index + 1] + data[index + 2]) / 3;
-          if (avg > settings.ditheringThreshold) {
-            number += 2 ** byteIndex;
-          }
-          byteIndex--;
-        }
+    // format is RGBA, so move 4 steps per pixel
+    for (let index = 0; index < data.length; index += 4) {
+      // Get the average of the RGB (we ignore A)
+      const avg = (data[index] + data[index + 1] + data[index + 2]) / 3;
+      const value = ~~(avg / 16);
+      if(upperByte) {
+        number = value << 4;
+      } else {
+        number |= value;
+      }
+
+
+      upperByte = !upperByte;
+
+      // if this was the last pixel of a row or the last pixel of the
+      // image, fill up the rest of our byte with zeros so it always contains 8 bits
+      if ((index !== 0 && (((index / 4) + 1) % (canvasWidth)) === 0) || (index === data.length - 4)) {
+        upperByte = true;
+      }
+
+      // When we have the complete 8 bits, combine them into a hex value
+      if (upperByte) {
         let byteSet = bitswap(number).toString(16);
         if (byteSet.length === 1) { byteSet = `0${byteSet}`; }
         if (!settings.removeZeroesCommas) {
-          stringFromBytes += `0x${byteSet.toString(16)}, `;
+          stringFromBytes += `0x${byteSet}, `;
         } else {
-          stringFromBytes += byteSet.toString(16);
+          stringFromBytes += byteSet;
         }
         outputIndex++;
         if (outputIndex >= 16) {
-          stringFromBytes += '\n';
+          if (!settings.removeZeroesCommas) {
+            stringFromBytes += '\n';
+          }
           outputIndex = 0;
         }
+        number = 0x00;
       }
     }
     return stringFromBytes;
   },
+
 
   // Output the image as a string for 565 displays (horizontally)
   // eslint-disable-next-line no-unused-vars
@@ -231,7 +246,7 @@ const ConversionFunctions = {
     return stringFromBytes;
   },
 };
-settings.conversionFunction = ConversionFunctions.horizontal1bit;
+settings.conversionFunction = ConversionFunctions.horizontal4bit;
 
 // An images collection with helper methods
 function Images() {
@@ -417,6 +432,16 @@ function placeImage(_image) {
       invert(canvas, ctx);
     }
   }
+
+  if (settings.conversionFunction === ConversionFunctions.horizontal4bit) {
+    // eslint-disable-next-line no-undef
+    toGrayscale(ctx, canvas.width, canvas.height);
+    if (settings.invertColors) {
+      invert(canvas, ctx);
+    }
+  }
+
+  toGrayscale
 
   if (settings.rotation !== 0) {
     const clone = canvas.cloneNode(true);
@@ -772,8 +797,8 @@ function handleImageSelection(evt) {
         w.id = 'screenWidth';
         w.min = 0;
         w.className = 'size-input';
-        w.value = img.width;
-        settings.screenWidth = img.width;
+        w.value = settings.screenWidth;
+        //settings.screenWidth = img.width;
         w.oninput = () => {
           canvas.width = this.value;
           updateAllImages();
@@ -786,8 +811,8 @@ function handleImageSelection(evt) {
         h.id = 'screenHeight';
         h.min = 0;
         h.className = 'size-input';
-        h.value = img.height;
-        settings.screenHeight = img.height;
+        h.value = settings.screenHeight;
+        //settings.screenHeight = img.height;
         h.oninput = () => {
           canvas.height = this.value;
           updateAllImages();

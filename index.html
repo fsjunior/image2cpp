@@ -19,17 +19,12 @@
   <div class="wrapper">
     <section class="section">
       <h1>image2cpp</h1>
-      <p><strong>image2cpp</strong> is a simple tool to change images into byte arrays (or arrays back into an images) for use with (monochrome) displays such as OLEDs on your Arduino or Raspberry Pi.<br>
-        It was originally made to work with the Adafruit OLED library (for which your can find an example sketch for Arduino <a href="https://github.com/javl/image2cpp/blob/master/oled_example/oled_example.ino" target="_blank">here</a>) but
+      <p><strong>image2cpp</strong> is a simple tool to change images into byte arrays for use with (grayscale) displays such as EPDs on your Arduino, ESP or Raspberry Pi.<br>
+        It was originally made to work with the Adafruit OLED library (for which your can find an example sketch for Arduino <a href="https://github.com/fsjunior/image2cpp/blob/master/oled_example/oled_example.ino" target="_blank">here</a>) but
         has been expanded by the community to be useful in all kind of (embedded) projects.</p>
-      <p>More info (and credits) can be found in the <a href="https://github.com/javl/image2cpp" target="_blank">Github repository</a>. This is also where you can report any <a href="https://github.com/javl/image2cpp/issues" target="_blank">issues</a> you might come across.</p>
-      <p class="sp-block">
-        Did you find this tool useful? Feel free to support my open source software on Github<br />
-        <a href="https://github.com/sponsors/javl" target="_blank">
-          <img src="https://img.shields.io/github/sponsors/javl?label=Sponsor&logo=GitHub" alt="GitHub Sponsor">
-        </a>
+        <p>This is a fork from <a href="https://javl.github.io/image2cpp/">image2cpp</a> from <a href="https://github.com/javl/image2cpp">javl</a>. I created it to work with the LilyGo T5 display that support 4 bits grayscale images.</p>
+      <p>More info (and credits) can be found in the <a href="https://github.com/fsjunior/image2cpp" target="_blank">Github repository</a>. This is also where you can report any <a href="https://github.com/fsjunior/image2cpp/issues" target="_blank">issues</a> you might come across.</p>
 
-      </p>
     </section>
 
     <section class="section bottom-divider">
@@ -118,7 +113,7 @@
             <div class="table-cell">
               <select id="scale" name="scale" onchange="updateInteger('scale')">
                 <option value="1">original size</option>
-                <option value="2">scale to fit, keeping proportions</option>
+                <option value="2" selected>scale to fit, keeping proportions</option>
                 <option value="3">stretch to fill canvas</option>
                 <option value="4">stretch to fill canvas horizontally</option>
                 <option value="5">stretch to fill canvas vertically</option>
@@ -239,6 +234,7 @@
             <div class="table-cell"><label>Draw mode:</label></div>
             <div class="table-cell">
               <select id="drawMode" name="drawMode" onchange="updateDrawMode(this)">
+                <option value="horizontal4bit">Horizontal - 4 bit per pixel</option>
                 <option value="horizontal1bit">Horizontal - 1 bit per pixel</option>
                 <option value="vertical1bit">Vertical - 1 bit per pixel</option>
                 <option value="horizontal565">Horizontal - 2 bytes per pixel (565)</option>

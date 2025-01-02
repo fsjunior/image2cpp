@@ -85,6 +85,28 @@ function dithering(ctx, width, height, threshold, typeIndex) {
   ctx.putImageData(imageData, 0, 0);
 }
 
+function toGrayscale(ctx, width, height) {
+  const lumR = [];
+  const lumG = [];
+  const lumB = [];
+  for (let i = 0; i < 256; i++) {
+    lumR[i] = i * 0.299;
+    lumG[i] = i * 0.587;
+    lumB[i] = i * 0.114;
+  }
+  const imageData = ctx.getImageData(0, 0, width, height);
+
+  const imageDataLength = imageData.data.length;
+
+  // Greyscale luminance (sets r pixels to luminance of rgb)
+  for (let i = 0; i <= imageDataLength; i += 4) {
+    const grayscale_pixel = Math.ceil(Math.round(lumR[imageData.data[i]] + lumG[imageData.data[i + 1]] + lumB[imageData.data[i + 2]]) / 16);
+    imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = grayscale_pixel * 16;  
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
 function canvas2bytes(canvas, type = 'bw') {
   const ctx = canvas.getContext('2d');
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
