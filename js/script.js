@@ -435,13 +435,11 @@ function placeImage(_image) {
 
   if (settings.conversionFunction === ConversionFunctions.horizontal4bit) {
     // eslint-disable-next-line no-undef
-    toGrayscale(ctx, canvas.width, canvas.height);
+    grayscale_dithering(ctx, canvas.width, canvas.height, settings.ditheringThreshold, settings.ditheringMode);
     if (settings.invertColors) {
       invert(canvas, ctx);
     }
   }
-
-  toGrayscale
 
   if (settings.rotation !== 0) {
     const clone = canvas.cloneNode(true);

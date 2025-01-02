@@ -85,7 +85,15 @@ function dithering(ctx, width, height, threshold, typeIndex) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-function toGrayscale(ctx, width, height) {
+function grayscale_dithering(ctx, width, height, threshold, typeIndex) {
+  const type = ['binary', 'bayer', 'floydsteinberg', 'atkinson'][typeIndex];
+  const bayerThresholdMap = [
+    [15, 135, 45, 165],
+    [195, 75, 225, 105],
+    [60, 180, 30, 150],
+    [240, 120, 210, 90],
+  ];
+
   const lumR = [];
   const lumG = [];
   const lumB = [];
@@ -98,10 +106,58 @@ function toGrayscale(ctx, width, height) {
 
   const imageDataLength = imageData.data.length;
 
-  // Greyscale luminance (sets r pixels to luminance of rgb)
+  const w = imageData.width;
+  let currentPixel;
+  let newPixel; 
+  let err;
+
+  // Grayscale luminance (sets r pixels to luminance of rgb)
   for (let i = 0; i <= imageDataLength; i += 4) {
-    const grayscale_pixel = Math.ceil(Math.round(lumR[imageData.data[i]] + lumG[imageData.data[i + 1]] + lumB[imageData.data[i + 2]]) / 16);
-    imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = grayscale_pixel * 16;  
+    imageData.data[i] =
+      Math.round(lumR[imageData.data[i]] + lumG[imageData.data[i + 1]] + lumB[imageData.data[i + 2]]);
+  }
+
+  for (let currentPixelIndex = 0; currentPixelIndex <= imageDataLength; currentPixelIndex += 4) {
+    newPixel = Math.round((imageData.data[currentPixelIndex]) / 16) * 16;
+
+    if (type === 'binary') {
+      // No dithering
+      imageData.data[currentPixelIndex] = newPixel;
+    } else if (type === 'bayer') {
+      // 4x4 Bayer ordered dithering algorithm
+      // eslint-disable-next-line no-mixed-operators
+      const x = currentPixelIndex / 4 % w;
+      const y = Math.floor(currentPixelIndex / 4 / w);
+      const map = Math.floor((newPixel + bayerThresholdMap[x % 4][y % 4]) / 2);
+      //console.log(map);
+      imageData.data[currentPixelIndex] = Math.round(map / 16) * 16;
+    } else if (type === 'floydsteinberg') {
+      // Floydaâ‚¬"Steinberg dithering algorithm
+      currentPixel = imageData.data[currentPixelIndex]
+      err = Math.floor((currentPixel - newPixel) / 16);
+      imageData.data[currentPixelIndex] = newPixel;
+
+      imageData.data[currentPixelIndex + 4] += err * 7;
+      imageData.data[currentPixelIndex + 4 * w - 4] += err * 3;
+      imageData.data[currentPixelIndex + 4 * w] += err * 5;
+      imageData.data[currentPixelIndex + 4 * w + 4] += err * 1;
+    } else if (type === 'atkinson') {
+      // Bill Atkinson's dithering algorithm
+      err = Math.floor((imageData.data[currentPixelIndex] - newPixel) / 8);
+      imageData.data[currentPixelIndex] = newPixel;
+
+      imageData.data[currentPixelIndex + 4] += err;
+      imageData.data[currentPixelIndex + 8] += err;
+      imageData.data[currentPixelIndex + 4 * w - 4] += err;
+      imageData.data[currentPixelIndex + 4 * w] += err;
+      imageData.data[currentPixelIndex + 4 * w + 4] += err;
+      imageData.data[currentPixelIndex + 8 * w] += err;
+    } else {
+      console.error(`unknown dithering type requested: ${type}`);
+    }
+
+    // Set g and b pixels equal to r
+    imageData.data[currentPixelIndex + 1] = imageData.data[currentPixelIndex + 2] = imageData.data[currentPixelIndex];
   }
 
   ctx.putImageData(imageData, 0, 0);
